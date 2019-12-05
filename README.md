@@ -17,3 +17,4 @@ Information about the uncertainty calculation methods used within the 'Find Fit 
 under the 'Uncertainty contributions' section within the paper titled:
 "High-resolution, accurate multiple-reflection time-of-flight mass spectrometry for short-lived, exotic
 nuclei of a few events in their ground and low-lying isomeric states" 
+
