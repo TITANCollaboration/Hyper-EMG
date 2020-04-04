@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Nov 23 15:59:32 2019
 
-@author: matthewsmith
-"""
-
-# -*- coding: utf-8 -*-
 """
 Created on Fri Nov 22 13:00:23 2019
 
@@ -22,10 +16,17 @@ Created on Fri Nov 22 13:00:23 2019
 # Author Matthew Smith
 # =============================================================================
 
-
-
 # =============================================================================
 # Update Notes:
+#
+#March 19th, 2020:   
+#   Added the ability to print the individual uncertainties
+#   that quadraticaly add up to the total peak shape unsertainty 
+#   change the 'QuadErrorProp' Function to take a dictionary instead
+#   added 'printDictionary' Function which neatly prints a dictionary's vals and keys.
+#
+#April 4th, 2020 : 
+#   CalibParams dictionary relocation to resolve large error problem
 # =============================================================================
 
 # # Import Needed Packages
@@ -35,7 +36,6 @@ import math
 from scipy.optimize import curve_fit
 import scipy.special
 import csv
-
 
 # =============================================================================
 # Function Definitions
@@ -252,6 +252,18 @@ def chi2reduced(y_measure, y_predict, errors, number_of_parameters):
     and knowing the number of parameters in the model."""
     return chi2(y_measure, y_predict, errors)/(numpy.asarray(y_measure).size - number_of_parameters)
 
+#--------------------------Print Dictionary Values-----------------------------
+#Neatly Prints the values out of a dictionaty
+def printDictionary(Dict):
+    KevPerAmu=931494.0954 
+    keylist=list(Dict.keys())
+    keylist.sort()
+    print('\nTotal Uncertainty Breakdown for the Desired Peak in Kev: \n')
+    for parameter in keylist:
+        err= Dict[parameter]*KevPerAmu
+
+        print('{:<15}= {:<30}'.format(parameter, err))
+        
 #--------------------------Trapezoidal integration-----------------------------
 # integrating using trap sum
 def TrapezoidalArea(xData,yData):
@@ -265,12 +277,15 @@ def TrapezoidalArea(xData,yData):
 # imports data from a txt file froma  given location
 def getData(fileLocation):
     with open(fileLocation, newline = '') as file:
-        data_reader = csv.reader(file, delimiter='\t')
-        data = [line for line in data_reader]
-        xdata = [i[0] for i in data]
-        ydata = [i[1] for i in data]
-        xdata = [float(i) for i in xdata]
-        ydata = [float(i) for i in ydata]
+        try:
+            data_reader = csv.reader(file, delimiter='\t')
+            data = [line for line in data_reader]
+            xdata = [i[0] for i in data]
+            ydata = [i[1] for i in data]
+            xdata = [float(i) for i in xdata]
+            ydata = [float(i) for i in ydata]
+        except:
+            pass
     return xdata,ydata  
 
 #-----------------------------make extremas------------------------------------
@@ -296,6 +311,14 @@ def QuadErrorProp(uncertainties):
         error+=uncertainty**2
     return (error**0.5)
 
+def QuadErrorPropDict(Dict):
+    keylist=list(Dict.keys())
+    keylist.sort()
+    error=0
+    for parameter in keylist:
+        err= Dict[parameter]
+        error+=err**2
+    return (error**0.5)
 #-------------------------------get mean---------------------------------------
 # gets mean of a list
 def GetMean(listForCalculation):
@@ -346,7 +369,7 @@ def getCountsInPeak(A1,A2,A3,spectraTotalCount):
     
     elif A2!=None and A3==None:
         peak1Counts=round(((A1[0])/(A1[0]+A2[0]))*spectraTotalCount)
-        peak2Counts=round(((A1[0])/(A1[0]+A2[0]))*spectraTotalCount)
+        peak2Counts=round(((A2[0])/(A1[0]+A2[0]))*spectraTotalCount)
         return peak1Counts,peak2Counts,None
     
     elif A3!=None:
@@ -423,7 +446,7 @@ def PlotTriplet(ioixdata,ioiydata,calibparams,popt3Peak):#popt3Peak1
 # Main 
 # =============================================================================
 
-leftTailNumber = 1
+leftTailNumber = 2
 rightTailNumber = 2
     
 def Main(): 
@@ -442,42 +465,50 @@ def Main():
     tp3=[None,None]
     
     # file paths to data
-    calibfile = 'H:/Files to put in public folder/Mass 96 files/Final H-EMG Fit txt Files/Calibrant Data (95.95150-95.9565).txt'
-    triplePeakFile = 'H:/Files to put in public folder/Mass 96 files/Final H-EMG Fit txt Files/Kr Peak Data.txt'
-    doublePeakFile ='H:/Kr Data/Mo Calibration for H-EMG/Txt Files/TRC 3 Block/Mo Peak TRC.txt'
-    
+    calibfile = '/Applications/coding_stuff/Triumf_Code/Matthew Smith Co-op 2019 Files/Mass 96 files/Final H-EMG Fit txt Files/Final_Calibrant_Cutoff_Test_Files/95.95100-95.9560.txt'
+    triplePeakFile = '/Applications/coding_stuff/Triumf_Code/Matthew Smith Co-op 2019 Files/Mass 96 files/Final H-EMG Fit txt Files/Fit Used In Publication/Kr Peak Data.txt'
+    doublePeakFile ='/Applications/coding_stuff/Triumf_Code/Matthew Smith - Archive/Kr Data/Mo Calibration for H-EMG/Txt Files/TRC 3 Block/Mo Peak TRC.txt'
+
 #-----------------------Parameters from calibration----------------------------   
 
-    center         =[95.95287530615498             ,1.7217460941536586e-05]
-    stdev          =[0.0001254081090237549         ,1.4168259831425084e-05]
-    weight         =[0.6021958135926947            ,0.048083012167163805]
+    center         =[95.95269820934844             ,1.59809001501288e-05]
+    stdev          =[0.00013014977846647843        ,1.3719159661340796e-05]
+    weight         =[0.14756874970889566           ,0.04477469947293635 ]
     scaling        =[1                             ,0                   ]
-    tm1            =[0.0001448509287648872         ,9.81296940516784e-06]
-    nm1            =[1                             ,0                   ]
-    np1            =[0.08430078833924554           ,0.04013895451714467 ]
-    tp1            =[0.005918751601432929          ,0.005618515407535694]
-    tp2            =[0.0002982306292264057         ,2.1206039001601116e-05]
-    np2            =[0.9156992116607545            ,0.4360007745161877  ]
+    tm1            =[0.003096478428660216          ,0.0029064830859289814]
+    nm1            =[0.21111926658371635           ,0.09732316119300333 ]
+    tm2            =[0.00017836330699497318        ,4.290803221946973e-05]
+    nm2            =[0.7888807334162836            ,0.3636634781027106  ]
+    np1            =[0.17570284090864577           ,0.09568397969027687 ]
+    tp1            =[0.000611221853257956          ,0.00016032954270512784]
+    tp2            =[0.00020856713772129663        ,2.9717723097950295e-05]
+    np2            =[0.8242971590913543            ,0.44889446420652057 ]
        
-#--------------------Perameters for double peak error analysis-----------------
-    
-    AI2            =[7.846396821028235             ,0.12136327974386839 ]
-    AII2           =[0.5539408395833615            ,0.035198199117590305]
-    CI2            =[95.90417226156724             ,3.96301500549804e-06]
-    CII2           =[95.90779272384665             ,1.6070022946779714e-05]
+#--------------------Perameters for double peak error analysis-----------------  
+
+    AI2            =[7.5043199833352645            ,0.14016946478846604 ]
+    AII2           =[0.6455061202110107            ,0.04226976609920313 ]
+    CI2            =[95.90399691410488             ,4.933377213054878e-06]
+    CII2           =[95.90761936242832             ,1.6383969794799112e-05]
     
 #--------------------Perameters for Triple peak error analysis-----------------   
     
-    AI3            =[0.33553523839788213           ,0.007983786351121581]
-    AII3           =[0.857331514951799             ,0.012772862186624552]
-    AIII3          =[0.0030234792413154975         ,0.0013465193586008474]
-    CI3            =[95.93429692555165             ,6.18832717372507e-06]
-    CII3           =[95.93928166035857             ,3.7731606313262607e-06]
-    CIII3          =[95.94247786888701             ,0.00011670317975995928]
-#------------------------------------------------------------------------------
+    AI3            =[0.33022621688675824           ,0.0064203309356999725]
+    AII3           =[0.8680816323864224            ,0.010277560357001137]
+    AIII3          =[0.006777046131809915          ,0.0010875037645273291]
+    CI3            =[95.93411988118544             ,5.0801611718788195e-06]
+    CII3           =[95.93910515319644             ,3.003965504009841e-06]
+    CIII3          =[95.9423176336484              ,4.203102656840622e-05]
     
+#-------------------------Individual Deviations--------------------------------
+    # print the deviations that makeup the total uncertainty for a given peak
+    ShowAllCalib=False
+    ShowAllDoubletPeak1=False
+    ShowAllDoubletPeak2=False
+    ShowAllTripletPeak1=False
+    ShowAllTripletPeak2=False      
+    ShowAllTripletPeak3=True
     
-            
     #import calibrant data, gets normalized
     calibxdata,calibydata=getData(calibfile)
     errorbarsCalib = numpy.asarray([math.sqrt(i+1) for i in calibydata])
@@ -487,7 +518,6 @@ def Main():
     
     calibydata=list(numpy.asarray(calibydata)/NormalizationFactor)    
     errorbarsCalib=numpy.asarray(errorbarsCalib)/NormalizationFactor
-    
     
     
     # import data for  3 peak set
@@ -504,39 +534,40 @@ def Main():
     DblPeak1StatErr,DblPeak2StatErr=getStatUncertainty(Doubletpeak1Counts,Doubletpeak2Counts,None,stdev)
     
     
-    
     # set perameters to be tested. IF a new perameter is added, please append it to the list below
     parameters=[stdev,weight,tm1,nm1,tm2,nm2,tm3,nm3,np1,tp1,np2,tp2,np3,tp3,AI3,AII3,AIII3,AI2,AII2] 
-    stDevCalib=[]
-    stDevIOIPeak1=[]
-    stDevIOIPeak2=[]
-    stDevIOIPeak3=[]
-    stDevDoubleIOIPeak1=[]
-    stDevDoubleIOIPeak2=[]
+    calibErrs={}
+    TripErrsI={}
+    TripErrsII={}
+    TripErrsIII={}
+    DoubleErrsI={}
+    DoubleErrsII={}
     parametersforTriplePeak=['aITrip','aIITrip','aIIITrip']# key names for 'calibparams' of all perameters that only pertain to the Triplet
     parametersforDoublePeak=['aIDouble', 'aIIDouble']# key names for 'calibparams' of all perameters that only pertain to the Doublet
          
-    calibparams = { # containts all parameters This is used to pass thevalues into the curve_Fit function without being optimized
-       'stdev':stdev,'weight':weight,        
-       'tm1':tm1,'nm1':nm1,
-       'tm2':tm2,'nm2':nm2,
-       'np1':np1,'tp1':tp1,
-       'np2':np2,'tp2':tp2,
-       'np3':np3,'tp3':tp3,
-       'aIDouble':AI2, 'aIIDouble':AII2,
-       'aITrip':AI3,'aIITrip':AII3,
-       'aIIITrip':AIII3}
-    
  
     # make p0, upper limits and lower limits
     pnaught1,lowerLim1,upperLim1=MakeP0andBounds(center,None,None,stdev)
     pnaught2,lowerLim2,upperLim2=MakeP0andBounds(CI2,CII2,None,stdev,)
     pnaught3,lowerLim3,upperLim3=MakeP0andBounds(CI3,CII3,CIII3,stdev)
+    
 
     #skip perameters tat are not used/ are fixed
     for parameter in parameters:
         if parameter[0]==None or parameter[0]==1:
             continue
+        
+        calibparams = { # containts all parameters This is used to pass thevalues into the curve_Fit function without being optimized
+           'stdev':stdev,'weight':weight,        
+           'tm1':tm1,'nm1':nm1,
+           'tm2':tm2,'nm2':nm2,
+           'tm3':tm3,'nm3':nm3,
+           'np1':np1,'tp1':tp1,
+           'np2':np2,'tp2':tp2,
+           'np3':np3,'tp3':tp3,
+           'aIDouble':AI2, 'aIIDouble':AII2,
+           'aITrip':AI3,'aIITrip':AII3,
+           'aIIITrip':AIII3}
     
         key=getKey(parameter,calibparams)
         paramUpper , paramLower = MakeExtrema(parameter)
@@ -566,37 +597,53 @@ def Main():
             
         if key not in parametersforTriplePeak and key not in parametersforDoublePeak:  
             poptCal2, pcovCal2 = curve_fit(lambda x, c: singlefunc(x, calibparams, c), calibxdata, calibydata, p0=pnaught1,sigma=errorbarsCalib, bounds=(lowerLim1,upperLim1))
-            stDevCalib.append(GetDeviation([poptCal1[0],poptCal2[0]],center[0]))# move these here so they ignore the unwanted parameter changes
+                # these are here so they ignore the unwanted parameter changes
+            calibErrs[key]=GetDeviation([poptCal1[0],poptCal2[0]],center[0])
             
         if key not in parametersforTriplePeak:
             popt2Peak2, pcov2Peak2 = curve_fit(lambda x, c1, c2: doublefunc(x, calibparams, c1, c2), ioixdata2, ioiydata2, sigma=errorbarsIOI2, p0=pnaught2, bounds=(lowerLim2,upperLim2))
-            stDevDoubleIOIPeak1.append(GetDeviation([popt2Peak1[0],popt2Peak2[0]],CI2[0]))
-            stDevDoubleIOIPeak2.append(GetDeviation([popt2Peak1[1],popt2Peak2[1]],CII2[0]))  
+
+            DoubleErrsI[key]=GetDeviation([popt2Peak1[0],popt2Peak2[0]],CI2[0])
+            DoubleErrsII[key]=GetDeviation([popt2Peak1[1],popt2Peak2[1]],CII2[0])
             
         if key not in parametersforDoublePeak:       
             popt3Peak2, pcov3Peak2 = curve_fit(lambda x, c1, c2, c3: triplefunc(x, calibparams, c1, c2, c3), ioixdata, ioiydata, sigma=errorbarsIOI, p0=pnaught3, bounds=(lowerLim3,upperLim3))
-            stDevIOIPeak1.append(GetDeviation([popt3Peak1[0],popt3Peak2[0]],CI3[0]))
-            stDevIOIPeak2.append(GetDeviation([popt3Peak1[1],popt3Peak2[1]],CII3[0]))
-            stDevIOIPeak3.append(GetDeviation([popt3Peak1[2],popt3Peak2[2]],CIII3[0]))
+
+            TripErrsI[key]=GetDeviation([popt3Peak1[0],popt3Peak2[0]],CI3[0])
+            TripErrsII[key]=GetDeviation([popt3Peak1[1],popt3Peak2[1]],CII3[0])
+            TripErrsIII[key]=GetDeviation([popt3Peak1[2],popt3Peak2[2]],CIII3[0])
         
-    
     #Print statements    
     KevPerAmu=931494.0954  
     print('\n---------------------------Calibrant------------------------------')
-    print('Calibrant Peak Shape Uncertainty (Kev) : ' + str( QuadErrorProp(stDevCalib)*KevPerAmu))
+    print('Calibrant Peak Shape Uncertainty (Kev) : ' + str( QuadErrorPropDict(calibErrs)*KevPerAmu)) 
     print('Statistical Uncertainty in Calib Peak (Kev) : ' + str(calibStatErr*KevPerAmu))
     print('\n--------------------------Triplet Peak----------------------------')
-    print('Triple Peak 1 Shape Uncertainty (Kev) : ' + str(QuadErrorProp(stDevIOIPeak1)*KevPerAmu))
+    print('Triple Peak 1 Shape Uncertainty (Kev) : ' + str(QuadErrorPropDict(TripErrsI)*KevPerAmu))
     print('Statistical Uncertainty in Triple Peak 1 (Kev) : ' + str(TripPeak1StatErr*KevPerAmu))
-    print('Triple Peak 2 Shape Uncertainty (Kev) : ' + str(QuadErrorProp(stDevIOIPeak2)*KevPerAmu))
+    print('Triple Peak 2 Shape Uncertainty (Kev) : ' + str(QuadErrorPropDict(TripErrsII)*KevPerAmu))
     print('Statistical Uncertainty in Triple Peak 2 (Kev) : ' + str(TripPeak2StatErr*KevPerAmu))
-    print('Triple Peak 3 Shape Uncertainty (Kev) : ' + str(QuadErrorProp(stDevIOIPeak3)*KevPerAmu))
+    print('Triple Peak 3 Shape Uncertainty (Kev) : ' + str(QuadErrorPropDict(TripErrsIII)*KevPerAmu))
     print('Statistical Uncertainty in Triple Peak 3 (Kev) : ' + str(TripPeak3StatErr*KevPerAmu))
     print('\n--------------------------Doublet Peak----------------------------')
-    print('Double Peak 1 Shape Uncertainty (Kev) : ' + str(QuadErrorProp(stDevDoubleIOIPeak1)*KevPerAmu))
+    print('Double Peak 1 Shape Uncertainty (Kev) : ' + str(QuadErrorPropDict(DoubleErrsI)*KevPerAmu))
     print('Statistical Uncertainty in Double Peak 1 (Kev) : ' + str(DblPeak1StatErr*KevPerAmu))
-    print('Double Peak 2 Shape Uncertainty (Kev) : ' + str(QuadErrorProp(stDevDoubleIOIPeak2)*KevPerAmu))
+    print('Double Peak 2 Shape Uncertainty (Kev) : ' + str(QuadErrorPropDict(DoubleErrsII)*KevPerAmu))
     print('Statistical Uncertainty in Double Peak 1 (Kev) : ' + str(DblPeak2StatErr*KevPerAmu))
     print('------------------------------------------------------------------')
-       
-Main()       
+
+
+    if ShowAllCalib:
+        printDictionary(calibErrs)  
+    if ShowAllDoubletPeak1:
+        printDictionary(DoubleErrsI) 
+    if ShowAllDoubletPeak2:
+        printDictionary(DoubleErrsII) 
+    if ShowAllTripletPeak1:
+        printDictionary(TripErrsI) 
+    if ShowAllTripletPeak2: 
+        printDictionary(TripErrsII) 
+    if ShowAllTripletPeak3:
+        printDictionary(TripErrsIII)
+        
+Main()           
