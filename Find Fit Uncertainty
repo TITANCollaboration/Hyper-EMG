@@ -277,16 +277,15 @@ def TrapezoidalArea(xData,yData):
 # imports data from a txt file froma  given location
 def getData(fileLocation):
     with open(fileLocation, newline = '') as file:
-        try:
-            data_reader = csv.reader(file, delimiter='\t')
-            data = [line for line in data_reader]
-            xdata = [i[0] for i in data]
-            ydata = [i[1] for i in data]
-            xdata = [float(i) for i in xdata]
-            ydata = [float(i) for i in ydata]
-        except:
-            pass
-    return xdata,ydata  
+        data_reader = csv.reader(file, delimiter='\t')
+        for j in range(18):
+            next(data_reader,None)
+        data = [line for line in data_reader]
+        xdata = [i[0] for i in data]
+        ydata = [i[1] for i in data]
+        xdata = [float(i) for i in xdata]
+        ydata = [float(i) for i in ydata]
+    return xdata,ydata   
 
 #-----------------------------make extremas------------------------------------
 # given an nx2 list, first index val, 2nd uncertainty, return the extrema values
