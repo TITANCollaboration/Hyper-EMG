@@ -1,0 +1,56 @@
+hyper-EMG.py Usage Documentation
+
+Sam Porter
+University of British Columbia
+
+For the TITAN Collaboration @ TRIUMF
+Last updated on 3/18/2020
+
+##
+Intro
+##
+
+This document aims to provide a thorough documentation of my process of using hyper-EMG.py written by Matthew Smith and Chris Izzo and Find-Fit-Uncertainty.py by Matthew Smith on the analysis of 50u masses from June 2019. I'll try to detail any issues or bugs I run into while using the code, and detail any changes or fixes I made to it, such that this document is helpful for the next user in the future.
+
+##
+Documentation
+##
+
+-- 1/31/20
+List index out of range error found when trying to read in the calibrant file. Thanks to help from Tobias, we found that this was because Matt trimmed the header off of the output MAC .txt files before putting them into his code.
+
+Fixed by adding header-skip code into the actual file reading mechanism, .txt files can now be taken directly from the MAC output and put into the code.
+
+Things seem to work nicely now! My advice (based on personal mistakes I made) is to comment out the #-peak fitting routine you aren't using (i.e. if using double, comment out triple). Hopefully no more changes will need to be made, I'll keep adding advice as I find relevant.
+
+-- 2/5/20
+I've yet to really play around with the optimization parameters, but I've moved on to the uncertainty calculations in Find-Fit-Uncertainty.py. I immediately ran into the same range error as above in Hyper-EMG.py, which I fixed with the exact same bit of header-skip code.
+
+It appears to work well now, albeit there are some invalid values popping up, but I'm assuming these are generated from the triple peak uncertainty calculation that I'm not really using. More to come on if the results have any substance.
+
+Also, Matt uploaded the Hyper-EMG User Manual, so I won't be detailing any suggestions in here that are already in there to avoid repetition.
+
+-- 3/4/20
+Discovered an error in Find-Fit-Uncertainty.py, in the getCountsInPeak function. peak2Counts was the same variable as peak1Counts, simple fix of changing A1 to A2 in peak2Counts (hooray for single number coding mistakes haha).
+
+Also, I'll add a few suggestions of mistakes I've made on my end:
+- Do NOT overestimate the number of tails! This might not make a difference in the produced fit from hyper-EMG.py, but will greatly inflate your shape uncertainties.
+- Make sure you have the right number of tails indicated in the Find-Fit-Uncertainty.py script
+
+-- 3/9/20
+In attempting to use the codes for some larger statistics data, I'm getting some very large uncertainties (not exponentially so, but on the order of 10^2 keV). I've narrowed it to be something wonky with the hyper-EMG.py script and not something in Find-Fit-Uncertainty.py. It has nothing to do with a Chi^2 issue that would've been cause by noise points in between the two peaks, and it also has nothing to do with the separation distance of the two peaks (as long as the peaks are fully resolved the same fit is reproduced irrelevant of their distance apart). I will continue experimenting and will update this when I figure out the issue.
+
+-- 3/12/20
+After lots of testing of lots of different things, I believe I've found a solution. Essentially, the values for the double peak masses were allowed to vary from their respective guess mass values by two times the standard deviation of the H-EMG fit calibrant mass value. Allowing the mass values to vary by more (i.e. four times the standard deviation) allowed the fitter to find the true global minimum and not only produce good fits for the two peaks but also reasonable shape uncertainties (~10^1 keV). In practice, this simply meant changing the 2 to a 4 in the variable "modifier" in the "MakeP0andBounds2" function in hyper-EMG.py (I made the corresponding change in Find-Fit-Uncertainty.py as well). I think this was likely an issue here because of the high statistics of the data being fit; since the calibrant peak fit was very nicely (Chi2 very close to 1), the standard deviation of the H-EMG fit calibrant mass value was small, and thus the variation allowed was too small to pick up the slight differences in peak shape we see between the two peaks of interest. I'm leaving this variation at the larger amount (4*stdev) which is normally a good idea in fitting, but also suggest to continually check the bounds being created for your fitter from MakeP0andBounds2 if you're having fitting issues.
+
+-- 3/18/20
+In analyzing some more data, I noticed some particularly ugly fits occurring. The fix ended up being changing what peak I was using as the reference peak. Essentially, I gather the fits struggle to converge to nice values when the data isn't nicely full of peaks of the same peak shape; therefore, I suggest trying different reference peaks if your fits aren't looking nice (provided the ones you're trying are well-known enough).
+
+-- 4/7/20
+As of today, Matt has implemented all of these changes (and a few others that he and Tobias had found) and they're reflected in the scripts uploaded to the Github.
+
+
+
+
+
+
