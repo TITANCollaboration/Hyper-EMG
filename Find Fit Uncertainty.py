@@ -522,14 +522,14 @@ def Main():
     # import data for  3 peak set
     ioixdata,ioiydata = getData(triplePeakFile)
     errorbarsIOI =numpy.asarray([math.sqrt(i+1) for i in ioiydata])
-    Tripletpeak1Counts,Tripletpeak2Counts,Tripletpeak3Counts = getCountsInPeak(AI3,AII3,AIII3,sum(ioixdata))
+    Tripletpeak1Counts,Tripletpeak2Counts,Tripletpeak3Counts = getCountsInPeak(AI3,AII3,AIII3,sum(ioiydata))
     TripPeak1StatErr,TripPeak2StatErr,TripPeak3StatErr=getStatUncertainty(Tripletpeak1Counts,Tripletpeak2Counts,Tripletpeak3Counts,stdev)
     
       
     # import data with 2 peaks, not currently used
     ioixdata2,ioiydata2 = getData(doublePeakFile)
     errorbarsIOI2 =numpy.asarray([math.sqrt(i+1) for i in ioiydata2])
-    Doubletpeak1Counts,Doubletpeak2Counts,placeholder = getCountsInPeak(AI2,AII2,None,sum(ioiydata))
+    Doubletpeak1Counts,Doubletpeak2Counts,placeholder = getCountsInPeak(AI2,AII2,None,sum(ioiydata2))
     DblPeak1StatErr,DblPeak2StatErr=getStatUncertainty(Doubletpeak1Counts,Doubletpeak2Counts,None,stdev)
     
     
