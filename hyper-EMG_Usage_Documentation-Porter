@@ -49,8 +49,8 @@ In analyzing some more data, I noticed some particularly ugly fits occurring. Th
 -- 4/7/20
 As of today, Matt has implemented all of these changes (and a few others that he and Tobias had found) and they're reflected in the scripts uploaded to the Github.
 
-
-
+-- 5/14/20
+Another bug was discovered, this time in Find-Fit-Uncertainty.py. The getCountsInPeak function for the double peak case was taking in the number of counts from the triple peak file instead of the double peak file. This means that, if you didn't have the triple and double peak filenames set to the same double peak file, the resulting statistical uncertainty for the double peak case would have been incorrect. This was fixed by a simply changing ioiydata to ioiydata2.
 
 
 
